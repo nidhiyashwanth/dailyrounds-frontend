@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { AtSign, Plus, Tag, X } from "lucide-react";
 
 const todoSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
@@ -199,7 +199,12 @@ export function TodoForm({ todo, onSuccess, users }: TodoFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                <span>Description</span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AtSign className="h-3 w-3" /> @username to mention
+                </span>
+              </FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Task description (use @username to mention users)"
@@ -207,7 +212,6 @@ export function TodoForm({ todo, onSuccess, users }: TodoFormProps) {
                   {...field}
                 />
               </FormControl>
-              <FormDescription>Use @username to mention users</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -244,31 +248,50 @@ export function TodoForm({ todo, onSuccess, users }: TodoFormProps) {
           name="tagInput"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
+              <FormLabel className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                <span>Tags</span>
+              </FormLabel>
+              <div className="flex gap-2">
+                <FormControl>
                   <Input
                     placeholder="Add tags (press Enter to add)"
                     {...field}
                     onKeyDown={handleTagKeyPress}
                   />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {tag}
-                        <X
-                          className="h-3 w-3 cursor-pointer"
-                          onClick={() => removeTag(tag)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </FormControl>
+                </FormControl>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => addTag(form.getValues("tagInput") || "")}
+                  disabled={!form.getValues("tagInput")}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeTag(tag);
+                      }}
+                      aria-label={`Remove ${tag} tag`}
+                    >
+                      <X className="h-3 w-3 cursor-pointer" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
               <FormDescription>Add relevant tags to your task</FormDescription>
               <FormMessage />
             </FormItem>
@@ -276,8 +299,11 @@ export function TodoForm({ todo, onSuccess, users }: TodoFormProps) {
         />
 
         {mentionedUsers.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Mentioned Users</h3>
+          <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              <AtSign className="h-4 w-4" />
+              <span>Mentioned Users</span>
+            </h3>
             <div className="flex flex-wrap gap-2">
               {mentionedUsers.map((userId) => {
                 const user = users.find((u) => u._id === userId);
@@ -292,7 +318,7 @@ export function TodoForm({ todo, onSuccess, users }: TodoFormProps) {
         )}
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : todo ? "Update Todo" : "Create Todo"}
+          {isSubmitting ? "Saving..." : todo ? "Update Task" : "Create Task"}
         </Button>
       </form>
     </Form>

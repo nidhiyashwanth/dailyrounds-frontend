@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Todo, Priority, User } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { addTodoNote, getTodoNotes } from "@/lib/api";
+import { addTodoNote, getTodo, getTodoNotes } from "@/lib/api";
 import { useUser } from "@/lib/user-context";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { Pencil, Trash, Calendar, Tag } from "lucide-react";
 
 interface TodoDetailsProps {
   todo: Todo | null;
@@ -40,8 +42,25 @@ export function TodoDetails({
   const [noteContent, setNoteContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [currentTodo, setCurrentTodo] = useState<Todo | null>(todo);
 
-  if (!todo) return null;
+  useEffect(() => {
+    setCurrentTodo(todo);
+  }, [todo]);
+
+  // Refresh todo data to get latest notes
+  const refreshTodoData = async () => {
+    if (todo?._id) {
+      try {
+        const response = await getTodo(todo._id);
+        setCurrentTodo(response.data);
+      } catch (error) {
+        console.error("Failed to refresh todo data", error);
+      }
+    }
+  };
+
+  if (!currentTodo) return null;
 
   const priorityColorMap = {
     [Priority.HIGH]:
@@ -58,10 +77,11 @@ export function TodoDetails({
 
     setIsSubmitting(true);
     try {
-      await addTodoNote(todo._id, noteContent, currentUser._id);
+      await addTodoNote(currentTodo._id, noteContent, currentUser._id);
       toast.success("Note added successfully");
       setNoteContent("");
-      // Refresh notes by re-opening the dialog or refreshing data
+      // Refresh notes immediately
+      await refreshTodoData();
     } catch (error) {
       toast.error("Failed to add note");
       console.error(error);
@@ -72,7 +92,8 @@ export function TodoDetails({
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    return formatDistanceToNow(date, { addSuffix: true });
   };
 
   // Render user avatar with name
@@ -106,17 +127,12 @@ export function TodoDetails({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">{todo.title}</DialogTitle>
+          <DialogTitle className="text-xl flex items-center justify-between">
+            <span>{currentTodo.title}</span>
+          </DialogTitle>
           <DialogDescription className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className={`px-2 py-1 ${priorityColorMap[todo.priority]}`}
-            >
-              {todo.priority}
-            </Badge>
-            <span className="text-sm">
-              Created: {formatDate(todo.createdAt)}
-            </span>
+            <Calendar className="h-4 w-4" />
+            <span>Created {formatDate(currentTodo.createdAt)}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -129,27 +145,27 @@ export function TodoDetails({
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="notes">
-              Notes ({todo.notes?.length || 0})
+              Notes ({currentTodo.notes?.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="mentions">
-              Mentions ({todo.mentionedUsers?.length || 0})
-            </TabsTrigger>
+            <TabsTrigger value="mentions">Mentions</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-2">
-            <TabsContent value="details" className="space-y-4 p-1">
+          <ScrollArea className="flex-1 mt-4 pr-4">
+            <TabsContent value="details" className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium mb-2">Description</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {todo.description}
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 bg-muted/50 rounded-md">
+                  {currentTodo.description}
                 </p>
               </div>
 
-              {todo.tags && todo.tags.length > 0 && (
+              {currentTodo.tags && currentTodo.tags.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium mb-2">Tags</h3>
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-1">
+                    <Tag className="h-4 w-4" /> Tags
+                  </h3>
                   <div className="flex flex-wrap gap-1">
-                    {todo.tags.map((tag, i) => (
+                    {currentTodo.tags.map((tag, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
@@ -160,32 +176,29 @@ export function TodoDetails({
 
               <div>
                 <h3 className="text-sm font-medium mb-2">Created By</h3>
-                {todo.createdBy && renderUser(todo.createdBy)}
+                <div className="p-2 rounded-md border">
+                  {currentTodo.createdBy && renderUser(currentTodo.createdBy)}
+                </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="notes" className="space-y-4 p-1">
-              {!todo.notes || todo.notes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No notes yet.</p>
+            <TabsContent value="notes" className="space-y-4">
+              {!currentTodo.notes || currentTodo.notes.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-md text-center">
+                  No notes yet. Add your first note below.
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {todo.notes.map((note, index) => (
-                    <Card key={index} className="border">
-                      <CardHeader className="py-3 px-4">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            {note.createdBy && renderUser(note.createdBy)}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(note.createdAt)}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="py-3 px-4">
-                        <p className="text-sm whitespace-pre-wrap">
+                  {currentTodo.notes.map((note, index) => (
+                    <Card key={index} className="overflow-hidden">
+                      <div className="p-3">
+                        <p className="text-sm whitespace-pre-wrap mb-2">
                           {note.content}
                         </p>
-                      </CardContent>
+                        <p className="text-xs text-muted-foreground text-right">
+                          {formatDate(note.createdAt)}
+                        </p>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -213,31 +226,73 @@ export function TodoDetails({
               )}
             </TabsContent>
 
-            <TabsContent value="mentions" className="p-1">
-              {!todo.mentionedUsers || todo.mentionedUsers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No mentions.</p>
+            <TabsContent value="mentions" className="space-y-4">
+              {!currentTodo.mentionedUsers ||
+              currentTodo.mentionedUsers.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-md text-center">
+                  No mentions. Use @username in the description to mention
+                  users.
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {todo.mentionedUsers.map((user, index) => (
-                    <div key={index} className="p-2 rounded-md border">
-                      {renderUser(user)}
-                    </div>
-                  ))}
+                  {/* Filter out duplicate users by ID before rendering */}
+                  {Array.from(
+                    new Set(
+                      currentTodo.mentionedUsers.map((user) =>
+                        typeof user === "string" ? user : user._id
+                      )
+                    )
+                  ).map((userId, index) => {
+                    const user =
+                      typeof currentTodo.mentionedUsers[0] === "string"
+                        ? currentTodo.mentionedUsers.find((u) =>
+                            typeof u === "string"
+                              ? u === userId
+                              : u._id === userId
+                          )
+                        : currentTodo.mentionedUsers.find((u) =>
+                            typeof u === "string"
+                              ? u === userId
+                              : u._id === userId
+                          );
+
+                    return user ? (
+                      <div
+                        key={index}
+                        className="p-2 rounded-md border flex items-center"
+                      >
+                        {renderUser(user)}
+                      </div>
+                    ) : null;
+                  })}
                 </div>
               )}
             </TabsContent>
           </ScrollArea>
         </Tabs>
 
-        <DialogFooter className="flex justify-between items-center mt-4">
-          <Button variant="destructive" onClick={() => onDelete(todo._id)}>
-            Delete
+        <DialogFooter className="flex justify-between items-center mt-4 border-t pt-4">
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-2"
+            onClick={() => onDelete(currentTodo._id)}
+          >
+            <Trash className="h-4 w-4" />
+            <span>Delete</span>
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" size="sm" onClick={onClose}>
               Close
             </Button>
-            <Button onClick={() => onEdit(todo)}>Edit</Button>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={() => onEdit(currentTodo)}
+            >
+              <Pencil className="h-4 w-4" />
+              <span>Edit</span>
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>

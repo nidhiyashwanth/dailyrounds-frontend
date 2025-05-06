@@ -1,26 +1,27 @@
 "use client";
 
 import * as React from "react";
-import {
-  IconDashboard,
-  IconList,
-  IconSettings,
-  IconTag,
-  IconUsers,
-} from "@tabler/icons-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LucideLayoutDashboard, LucideSquareCheck } from "lucide-react";
 
-import { NavUser } from "@/components/nav-user";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import { NavUser } from "@/components/nav-user";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -30,9 +31,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/">
-                <span className="text-base font-semibold">Todo App</span>
-              </a>
+              <Link href="/">
+                <span className="text-base font-semibold">
+                  DailyRounds Todo
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -40,48 +43,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={true}>
-              <a href="/">
-                <IconDashboard className="size-4" />
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/" || pathname === "/dashboard"}
+            >
+              <Link href="/dashboard">
+                <LucideLayoutDashboard className="h-4 w-4" />
                 <span>Dashboard</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/todos">
-                <IconList className="size-4" />
+            <SidebarMenuButton asChild isActive={pathname === "/todos"}>
+              <Link href="/dashboard">
+                <LucideSquareCheck className="h-4 w-4" />
                 <span>My Tasks</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/todos/tags">
-                <IconTag className="size-4" />
-                <span>Tags</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/users">
-                <IconUsers className="size-4" />
-                <span>Users</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/settings">
-                <IconSettings className="size-4" />
-                <span>Settings</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="flex flex-col gap-4 px-2">
+        <ThemeToggle />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

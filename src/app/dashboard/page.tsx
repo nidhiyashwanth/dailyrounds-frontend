@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { DataTable, TodoWithId } from "@/components/data-table";
+import { DataTable } from "@/components/data-table";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
   getUsers,
   updateTodo,
 } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TodoForm } from "@/components/todo-form";
 import {
   Dialog,
@@ -34,6 +33,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PlusCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Define a TodoWithId type that extends Todo
+export interface TodoWithId extends Todo {}
 
 export default function Page() {
   const { currentUser } = useUser();
@@ -129,29 +133,36 @@ export default function Page() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <SiteHeader title="Tasks" subtitle="View and manage your todos" />
-        <div className="flex flex-1 flex-col p-4 md:p-6">
-          <div className="mb-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold">All Tasks</h1>
-            <Button onClick={handleCreateNew}>Create New Task</Button>
+        <SiteHeader />
+        <div className="flex flex-col flex-1">
+          <div className="flex items-center justify-between px-4 py-4 md:px-6 lg:px-8 border-b">
+            <div>
+              <h1 className="text-xl font-semibold">Tasks</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage your tasks and track their progress
+              </p>
+            </div>
+            <Button onClick={handleCreateNew} className="gap-1">
+              <PlusCircle className="h-4 w-4" />
+              <span>New Task</span>
+            </Button>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>My Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center p-4">Loading...</div>
-              ) : (
-                <DataTable
-                  data={todos}
-                  onView={handleView}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              )}
-            </CardContent>
-          </Card>
+
+          <div className="p-4 md:p-6 lg:p-8">
+            {loading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-[400px] w-full" />
+              </div>
+            ) : (
+              <DataTable
+                data={todos}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            )}
+          </div>
         </div>
       </SidebarInset>
 
