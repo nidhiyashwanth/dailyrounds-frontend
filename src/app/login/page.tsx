@@ -175,7 +175,7 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <Card className="mx-auto max-w-md w-full">
+      <Card className="mx-auto max-w-md w-full p-5">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl">Todo App</CardTitle>
           <CardDescription>
@@ -337,6 +337,10 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
+
+      <div className="absolute right-4 bottom-4">
+        Use password: `password123` to login for any user
+      </div>
     </div>
   );
 }
