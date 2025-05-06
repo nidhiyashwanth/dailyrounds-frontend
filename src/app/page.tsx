@@ -48,10 +48,7 @@ export default function Home() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <SiteHeader
-          title="Todo Dashboard"
-          subtitle="Welcome to your Todo Dashboard"
-        />
+        <SiteHeader />
         <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
